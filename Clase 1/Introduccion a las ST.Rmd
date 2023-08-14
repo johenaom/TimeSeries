@@ -1,0 +1,626 @@
+---
+title: "Series de tiempo en R (Documento 1)"
+author: "Jose Oscar Henao Monje"
+output:
+  pdf_document: default
+  word_document: default
+subtitle: Introducción a las Series de tiempo
+---
+
+
+## Bienvenida
+
+Hola a todos y todas, mi nombre es Jose Oscar Henao Monje\footnote[{1}]{Economista colombiano y candidato a Magister en Economía de la Universidad de Buenos Aires. Es investigador principal del Programa Internacional sobre Democracia, Sociedad y Nuevas Economías - PIDESONE de la Universidad de Buenos Aires. Coordina actualmente el Observatorio Regional para el Desarrollo Sostenible de Cáritas en América Latina y el Caribe y es consultor de organizaciones internacionales como el Programa de Naciones Unidas para el Desarrollo, Banco Interamericano de Desarrollo. Sus temas de interés: Series de tiempo, microeconometría, evaluación de impacto, desarrollo sostenible, pobreza y desigualdad y mercado de trabajo.} y les acompañaré en un interorización a las series de tiempo en el software RStudio. Durante esta sesión aprenderemos cómo manerar el tiempo y formatos fechas.Muchos éxitos!!!
+
+Primero que todo limpiamos nuestra mesa de trabajo:
+
+```{r limpiar}
+rm(list = ls()) #Limpiar el ambiente
+cat("\f") #Limpiar la consola
+dev.off() #Limpiar plots
+```
+
+
+## Introducción a las librerías
+Como bien saben este programa cuenta con diferentes funcionalidades agrupadas a través de paquetes que facilitan el análisis de diferentes tópicos. Para el caso de Series de Tiempo (ST) utilizaremos 3 paquetes iniciales.
+
+1. Paquete "lubridate"
+2. Paquete "tseries"
+3. Paquete "forecast"
+
+Pero antes de instalar les sugiero ingresen a la solapa "Packages" de la parte inferior derecha.
+
+Una vez verificado en "Packages" que los 3 paquetes que queremos utilizar existen o no, usted debe instalar el paquete respectivo (en caso de no existir), o simplemente cargar la librería correspondiente.
+
+
+
+```{r library}
+library(lubridate)
+library(tseries)
+library(forecast)
+```
+
+* lubridate: no es un paquete especifico, es un paquete para pre-procesado de dato y se utiliza para formatear de la variable donde tenemos la fecha, el tiempo.
+
+* tseries: nos permite trabajar con el objeto serie temporal (modelar, graficar, testear)
+
+* forecast: Tiene muchas funciones de pronosticos, tiene herramientas para limpiar datos, outliers.Herramientas gráficas de series de tiempo o pronósticos futuros.
+
+
+
+## Formato de datos a tiempo
+
+Trabajaremos diferentes formas de darle formato al tiempo.
+
+### Forma 1
+
+Este primer procedimiento permite que una variable sea serie de tiempo (tipo fecha o tiempo). Las opciones que tenemos disponibles en R base son la clase "POSIXt" que significa en inglés "Portable Operating System Interface for Time" (interface de sistema operativo para el tiempo), que es la codificación extandar para el tiempo.
+
+Vamos a guardar en x el resultado de convertir un solo periodo de tiempo en la clase POSIXt que tiene dos variantes (ct y lt):
+
+```{r x e y}
+x <- as.POSIXct("2021-08-12 20:00:34") # Números de segundos
+y <- as.POSIXlt("2021-08-12 20:00:34")
+```
+
+Ahora ¿Qué implica que hallamos incorporado estas dos variantes de la clase POSIXt? verificando qué clase es x e y, tenemos que:
+
+```{r clase x e y}
+unclass(x)
+unclass(y)
+```
+
+
+Nota: La función unclass () permite visualizar cómo R almacena la información de la variable x tipo factor.
+
+"La clase POSIXct almacena internamente esta cifra como un número entero, mientras que la clase POSIXlt la descompone en una lista en diferentes elementos para los segundos, minutos, horas, día, mes y año."\footnote[{2}]{Tomado de: https://estadistica-dma.ulpgc.es/cursoR4ULPGC/6h-Fechas.html}
+
+¿Qué significa este número 1628779534? Corresponde a la cantidad de segundo que hay hasta esa fecha, desde un punto de referencia 01-01-1970 00:00:00. Este punto de referencia es el que toma la función POSIXct, sin contar años bisiestos.
+
+### Forma 2
+
+Otra forma de trabajar series y tiempos es a través de "as.Date". Aquí utilizamos as.punto algo quiere decir que queremos convertir esto en algo bajo un formato específico.
+
+```{r as.Date x}
+x = as.Date("2021-08-12")
+```
+
+¿Qué clase tendría este "as.Date"? Verifiquemos!!!
+
+```{r class as.Date x}
+x; class(x)
+unclass(x)
+```
+Y efectivamente nos confirma que está en formato fecha y nos menciona efectivamente que corresponde a 12 de agosto de 2021. Y el unclass nos devuelve el número de días desde el punto de referencia mencionado.
+
+
+### Forma 3
+
+Una tercera forma de dar formato es a través del paquete "chron" por lo que nuevamente les invito a verificar si lo tienen instalado, de lo contrario instálelo a través del siguiente comando: > install.packages("chron"). De tenerlo instalado cargue la librería respectiva.
+
+```{r library chron}
+library(chron)
+```
+Ahora podemos crear nuevamente un valor x que contiene la fecha a través del comando chron.Verifiquemos 3 cosas: 1) qué valor tiene x, 2) qué clase es x y 3) identifique cuantos días han pasado desde el punto de referencia (unclass de x).
+
+
+```{r chron x}
+x = chron("12/08/2021", "20:00:34")
+x
+class(x)
+unclass(x)
+```
+El paquete "chron" permite transformar objetos a diferentes formatos temporales (fecha, hora, )
+
+### Forma 4
+
+Utilizar la función strptime que convierte caracteres de texto a tiempo (strings to data and time). Supongamos que tenemos un valor a que contiene un vector de 3 momentos en el tiempo y los convierte en caracter.
+
+```{r caracter a}
+a = as.character(c("2021-08-12 20:00", "2021-09-25 12:01", "2021-03-09 11:46"))
+class(a)
+```
+
+Para darle formato de tiempo, utilizamos la función strptime y la ubicaremos en b:
+
+```{r strptime a}
+b = strptime(a, format ="%Y-%m-%d %H:%M") # format en la función permite 
+#decirle de qué forma queremos que se interprete el texto
+b #visualicemos b
+class(b) #verifiquemos que clase es.
+```
+Quieres profundizar otros tipos de formato que se le puede asignar no dudes en utilizar el comando: ">?strptime"
+
+### Forma 5
+
+Utilizar el paquete lubridate, este es el paquete más utilizado, nos genera muchos beneficios para manejar tiempos y fechas en diferentes formas.Simplemente ponemos el orden temporal que quisieramos tener. Por ejemplo para el 12 de agosto de 2021 y queremos formato Año/Mes/Día el número a incorporar en la función ymd es 20210812.
+
+```{r lubridate fechas}
+ymd(20210812) # Año / Mes / Día
+dmy(12082021)
+mdy(08122018)
+```
+Este reconoce inmediatamente los valores incorporados como fecha y toma el formato elegido.
+
+También podemos utilizar fecha y tiempo a la vez: Ejemplo la fecha de nuestra primera clase de series de tiempo y la vamos a incorporar en la variable miprimeraclase.
+
+```{r lubridate fecha}
+primeraclase <- ymd_hm("2021-08-12 20:00")
+primeraclase
+class(primeraclase)
+```
+
+## Objeto serie temporal e introducción a los gráficos
+
+Antes de iniciar con esta sección quisiera invitarles a visitar algunas herramientas diseñadas para fortalecer su aprendizaje en RStudio respecto al abordaje de las series de tiempo. En la parte inferior izquierda podrán encontar un simbolo de una casita, al hacer clic allí se podrá encontrar diferentes recursos de consulta, uno de los que más utilizo corresponde a los "RStudio Cheat Sheets". Puede ingresar también a través del siguiente link: https://www.rstudio.com/resources/cheatsheets/
+
+Para practicar alguna programación en relación a diferentes paquetes de R para ST, he preparado la implementación del paquete "tsbox" que tiene como objeto pasar objetos de series temporales de un formato a otro de manera sencilla. Para conocer un poco de este les invito a visitar el siguiente link: (Insertar link de medium.com/johenaom).
+
+Para trabajar un objeto de serie de tiempo tienes diferentes formas por ahora trabajaremos con la creación de unos datos.
+
+### Creación de unos datos
+Se simula unos datos uniformemente distribuidos, un total de 50 datos para empezar con valores entre 10 y 45. Esto a través de la función runif.
+
+
+```{r runif misdatos}
+misdatos = runif(n=50, min=10, max=45)
+class(misdatos)
+```
+
+Una vez creado estos datos, estamos en condiciones de convertir mis datos en una serie de tiempo a través de la función ts.
+
+### Creación de serie de tiempo
+Creamos una serie de tiempo a partir de los datos creados en el objeto misdatos, especificamos que sea a partir de 1956 con una frecuencia trimestral.
+
+```{r ts misdatos}
+miseriedetiempo = ts(data=misdatos,
+                  start = 1956, frequency = 4)
+class(miseriedetiempo)
+```
+
+### Creación del gráfico de la serie
+Una vez transformado un objeto con datos en un objeto tipo serie de tiempo, estamos en condiciones de graficarlo.
+
+```{r plot ts misdatos}
+plot(miseriedetiempo)
+```
+
+
+### Modifiquemos el periodo de tiempo de inicio de la serie
+
+Adicionalmente, podemos consultar que clase es la serie de tiempo que hemos creado (miseriedetiempo), que periodo de tiempo tiene y por supuesto, redefinir el inicio de análisis de la serie suponiendo que tenemos que corregir. Veamos:
+
+```{r varios ts misdatos}
+class(miseriedetiempo) # clase times series
+time(miseriedetiempo) # tiempo
+miseriedetiempo2 = ts(data=misdatos,
+                      start=c(2009,3), frequency = 4) # ajusta el perido
+```
+
+```{r plot ts misdatos2}
+plot(miseriedetiempo2) # graficando nuevamente el nuevo objeto creado
+```
+
+
+Trabajemos un poco más utilizando datos disponibles en RStudio, luego irémos a series más economicas.
+
+### Conjunto de datos Nottem
+
+Nottem es una serie de tiempo que contiene el promedio de temperaturas en el castillo de Nottingham en grados Fahrenheit durante 20 años. Graficando la serie temporal tenemos:
+
+```{r plot ts nottem}
+plot(nottem) # graficando nottem
+```
+
+¿Qué podemos observar? 
+
+Que efectivamente la serie de tiempo que incluye observaciones asociadas al tiempo son altamente estacionales, ya que en Inglaterra existen estaciones y su variación evidencia ciclos. ¿Qué más puede decir esta serie? Comparte tus observaciones.
+
+### Utilicemos otros paquetes utiles en series de tiempo
+
+Existen dos paquetes muy útiles en el análisis de series de tiempo, estos paquetes son: 1) forecast que ya habíamos introducido antes y 2) ggplot2. Este ultimo paquete es un "sistema organizado de visualización de datos. Forma parte del conjunto de librerías llamado tidyverse..."\footnote[{3}]{Tomado de:https://bit.ly/2Uf55KX}. Así una vez más lo sugerido es verificar si existe el paquete, de no existir instalarlo y si existe entonces cargar la librería respectiva. Y de no tener cargado ya el paquete forecast, hacerlo.
+
+```{r library ggplot2}
+library(ggplot2)
+library(forecast)
+```
+
+Si utilizamos el comando autoplot, nos grafica nuevamente la serie pero con la estructura del ggplot. Veamos:
+
+
+```{r autoplot nottem}
+autoplot((nottem))
+```
+
+Si le queremos agregar un título al gráfico agegamos ggtitle:
+
+```{r autoplot1 nottem}
+autoplot((nottem)) + ggtitle("Autoplot de los datos de temperatura de Nottingham")
+```
+
+Muy bien, hasta ahora hemos trabajado varias cosas que corresponden al pre-procesado de las Series de Tiempo: 1) Introducción a algunas librerías necesarias en el análisis de series de tiempo, 2) diferentes baterías para darle forma al tiempo en bases de datos, 3) introducimos nuestro primer objeto temporal a través de: a) creación de datos simulados, b) creación de una serie temporal. 4) creamos nuestro primer gráfico de serie, 5) modificamos el periodo de tiempo de inicio en una serie y finalmente 6)trabajamos con la serie Nottem en RStudio.
+
+Ahora vamos a trabajar con datos de información omitida y atípicos.
+
+
+## Valores faltantes y atípicos (Outliers)
+
+Este proceso corresponde a la identificación y tratamiento de valores faltantes y atípicos en las series temporales. Para esto vamos trabajar con otra base de datos diferente a la que hemos utilizado hasta ahora, por lo que vamos a importar los datos Rmissing en formato ts.
+
+Previamente seleccionamos la ubicación la cual vamos a trabajar:
+
+```{r ubicacion}
+path <- ("C:/Users/Jose Oscar Henao M/Documents/")
+```
+
+Ahora estamos en condiciones de importar los datos
+
+```{r Rmissing}
+mydata <- read.csv("C:/Users/Jose Oscar Henao M/Documents/Rmissing.csv")
+str(mydata)
+```
+
+Una vez cargados los datos, queremos que se reconozca que la variable "mydata" es una serie de tiempo. Nota: No estamos especificando la frecuencia de esta serie de tiempo ;).
+
+```{r mydata}
+myts=ts(mydata$mydata)
+myts
+```
+
+Como podemos observar en la tabla myts que hemos creado existen datos faltantes (NA)
+¿Tenemos información omitida NAs y Outliers? Para verificarlo utilizaremos dos herramientas fundamentales: 1) El resumen estadístico a través de "summary" y la gráfica.
+
+```{r NAyOutliers}
+summary(myts)
+plot(myts)
+```
+
+
+Como se pudo observar en el resumen estadístico tenemos 5 datos faltantes (NA) y posiblemente tenemos presencia de outliers por el rango de la serie de tiempo. Gráficamente podemos ver que tenemos lineas discontinuas (por los valores faltantes) y tenemos 4 puntos que representan datos atípicos.
+
+### Tratamiento de datos faltantes
+
+Para el tratamiento de datos NA, vamos a utilizar la librería "zoo" y rellenarlos. Como anteriormente especificamos antes de cargar la librería debemos verificar que el paquete "zoo" ya se encuentre instalado.
+
+```{r zoo}
+library(zoo)
+```
+
+la librería "zoo" cuenta con diferentes funciones: 1) locf: last observation carried forward (copia la última observación antes del NA) O 2) fill (rellenar con el valor que le pongamos). 3) otras opciones? les sugiero ver en "?zoo".
+
+```{r locf}
+myts.NAlocf=na.locf(myts)
+```
+
+```{r fill}
+myts.NAfill=na.fill(myts,33)
+```
+
+
+
+### Derección automática de outliers
+
+Este proceso de detección lo vamos a trabajar con la librería "forecast" a través de la función "tsoutliers"
+
+```{r forecastlib}
+library(forecast)
+```
+
+
+
+```{r outliers}
+myts1=tsoutliers(myts)
+myts1
+```
+
+Esta función nos permite identificar los outliers que existen en la serie de tiempo y nos realiza una sugerencia de qué valores incorporar. Me estima cuales deberían ser esos valores.
+
+Otra manera para detectar NAs desde la librería "forecas" es a través de la función "na.interp". Lo que hace esta función es rellenar NA con interpolación de los demás datos.Entiendase la interpolación como un proceso de usar valores conocidos para estimar valores desconocidos.
+
+```{r na.interp}
+myts.NAinterp = na.interp(myts)
+myts.NAinterp
+```
+
+
+Finalmente, paradesarrollar un proceso de limpieza de la serie de tiempo (NAs y Outliers) consiste en el uso de la función "tsclean" del paquete "forecast".
+
+```{r tsclean}
+mytsclean = tsclean(myts)
+plot(mytsclean)
+summary(mytsclean)
+```
+
+
+Así estamos en condiciones de utilizar estas diferentes formas para limpiar nuestras bases de datos, en caso tal de requerirlo.
+
+Veamos ahora una práctica para Argentina!!!
+
+
+
+# Analisis de la serie de tiempo del MERVAL (Argentina) a través de yahoo finance
+
+El MERVAL, "índice emblemático de Argentina, busca medir el desempeño de las acciones de mayor tamaño y liquidez operadas en Bolsas y Mercados Argentinos (BYMA), que estén clasificadas como acciones locales. Los componentes del índice deben cumplir con los requisitos mínimos de tamaño y liquidez"\footnote[{4}]{Tomado de: https://bit.ly/3xYNYL6}. Es un índice que mide el valor en pesos.
+
+Las librerías que utilizaremos adicionalmente a las ya cargadas son: 1) quantmod, 2) xts y 3) reshape.
+- El paquete quanmod permite obtener, transformar y dibujar datos financieros de diversas fuentes.
+- El paquete xts (eXtensible Time Series) ayuda a leer y organizar datos como series temporales.
+- Paquete reshape permite la transformación de datos entre los formatos ancho y largo. Es una forma de redimensionar una base de datos (reestructurar y agregar datos de un data frame o data).
+
+```{r librerias Merval}
+library(tidyverse)
+library(lubridate)
+library(quantmod)
+library(tseries)
+library(xts)
+library(zoo)
+library(reshape)
+```
+
+
+
+Para nuestro análisis del Merval (Argentina) debemos cargar los datos. Anteriormente hemos visto que podemos cargar los datos en diferentes formatos o simularlos a través de datos uniformemente distribuidos. En esta ocasión cargaremos los datos desde "Yahoo finance".Les invito a consultar los datos en el siguiente link: https://es-us.finanzas.yahoo.com/quote/%5EMERV?p=%5EMERV
+
+Para cargarlos utilizaremos el siguiente comando:
+
+```{r carga merv}
+getSymbols("^MERV", src="yahoo", periodicity="daily", format="xts")
+```
+Una vez cargado creamos los datos MERV1 que contiene los valores ajustados del Merval y una variable en formato xts que corresponde al tiempo.
+
+```{r valores ajustados}
+MERV1 <- MERV$MERV.Adjusted
+class(MERV1)
+```
+
+Verificando la clase de MERV1 identificamos que es "xts" en el tiempo y "zoo" en los valores ajustados. 
+
+Si queremos crear una función que pase de xts a data.frame podemos utilizar el siguiente comando:
+
+```{r xts a dataframe}
+xts_a_dataframe <- function(data_xts){
+  df_t <- data.frame(fecha=(index(data_xts)),
+                     value=coredata(data_xts))
+  colnames(df_t) <- c("fecha", "valor")
+  df_t
+}
+```
+
+
+Esta función nos permitiría crear un data frame con dos variables "fecha" y "valor".
+
+A través de esta función estamos en condiciones de pasar los datos alojados en MERV1 que es de tipo zoo a un data frame. Aquí tambien corregimos los datos omitidos.
+
+```{r merv1_df}
+MERV1 <- na.omit(MERV1)
+MERV1_df <- xts_a_dataframe(MERV1)
+```
+
+Bueno!!! visualicemos nuestros datos alojados en el data frame...
+
+```{r indice merval graficado}
+ggplot(MERV1_df, aes(y=valor, x=fecha))+
+  geom_line(colour="#00AFEB")+
+  geom_area(alpha=0.6)+
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y")+
+  theme_minimal()+
+  labs(title="Indice de Merval",
+       subtitle="Del 2007 al 2021",
+       caption="Elaboración propia con datos de Yahoo",
+       x="Fecha",
+       y="Precio $ARG")
+```
+
+¿Qué podemos ver de esta gráfica? Que efectivamente es una serie que evidencia la presencia de una tendencia (creciente), ¿Que más se puede observar?
+
+Ahora estamos en condiciones de ir más allá
+
+## Descomposición de la serie
+
+a) Para hacerlo vamos a utilizar la función decompose, cabe aclarar que esta función solo puede aplicarse a un objeto en formato xts, no data.frame. Aquí lo que nos interesa en la descomposición es reconocer el movimiento de valores presentes en el MERVAL, así que lo primero que debemos hacer un ajuste a las fechas. Para garantizar que estamos trabajando con fechas, crearemos una serie Merval de clase "serie de tiempo".
+
+
+```{r merval_ts}
+MERV1_ts <- ts(MERV1_df$valor, frequency = 252, start = c(2007,01))
+class(MERV1_ts)
+```
+
+Como se puede observar el objeto MERV1_ts es un objeto de tipo "ts".
+
+Ahora veamos visualmente la descomposición de la serie MERVAL (Argentina): En 4 categorías 1) lo observado, 2) la tendencia, 3) la estacionalidad y 4 el componente aleatorio.
+
+```{r decompose MERV}
+plot(decompose(MERV1_ts))
+```
+
+Ahora crearemos una variable nueva MERV tipo data frame que incluya lo observado, el componente estacional, la tendencia y el componente aleatorio.
+
+```{r componente}
+MERV1_componente <- data.frame(fecha=time(MERV1_ts),
+                               MERV1_ts=MERV1_ts,
+                             estacional=decompose(MERV1_ts)$seasonal,
+                             tendencia=decompose(MERV1_ts)$trend,
+                             aleatorio=decompose(MERV1_ts)$random)
+```
+
+
+Grafiquemos este data frame:
+
+```{r graf componente}
+MERV1_componente %>%
+  gather("id_var", "valores", -fecha) %>%
+  ggplot(aes(x=fecha, y=valores))+
+  geom_line(aes(color=id_var))+
+  facet_wrap(.~id_var, scales = "free_y")+
+  theme_minimal()+xlab("")+ylab("")+
+  theme(legend.position = "none")+
+  labs(title="Descomposición temporal")
+```
+
+Veamos ahora algunas aplicaciones estadísticas en el análisis de series de tiempo.
+
+## Análisis estadístico de la serie
+
+Agrupamiento de operador de retardos y diferencias en nuestra serie de tiempo.
+
+```{r retardos}
+retardos_MERV <- MERV1_df %>%
+  mutate(fecha=ymd(fecha),
+         retardo1=lag(valor, k=1),
+         d1=diff(MERV1, differences = 1),
+         d2=diff(MERV1, differences = 2),
+         d1log=log(valor)-lag(log(valor)),
+         tc_relativa=((valor/lag(valor,1))-1)*100)
+
+class(retardos_MERV)
+```
+
+Esta nos genera un data frame con diferentes variables: 1) retardo 1, 2) diferencia 1, 3) diferencia 2, 3) d1log = variación porcentual (dlog) y 4) cambio relativo en puntos porcentuales. Tenemos la serie con retados en un periodo, dif. 1, dif. 2, dif. log. y tc_relativa.
+
+También podemos crear un data frame incorporando variables que especifique información vinculada al tiempo (dia, semana, trimestre, etc.)
+
+```{r MERV_d}
+MERV1_d<- MERV1_df %>%
+  mutate(anio=format(fecha, "%Y"),
+         dia_semana=format(fecha, "%A"),
+         dia_semana_num=wday(fecha),
+         dia_mes=format(fecha, "%d"),
+         semana=format(fecha, "%W"),
+         mes_tex = format(fecha, "%b"),
+         mes_num=format(fecha, "%Q"),
+         tc_MERV1=((valor/lag(valor, 1))-1)*100)
+
+class(MERV1_d)
+```
+
+Ahora analicemos estadísticamente los datos que hemos trabajado agrupados por temporalidad:
+
+1. promedio con datos positivos y temporalidad (anual)
+
+```{r promedio}
+MERV1_d %>%
+  group_by(anio) %>%
+  summarise(promedio_posi=mean(tc_MERV1[tc_MERV1>0], na.rm = TRUE),
+            promedio_nega=mean(tc_MERV1[tc_MERV1<0], na.rm = TRUE),
+            promedio_total=mean(tc_MERV1, na.rm = TRUE))
+```
+
+2. Evidenciar promedios según nuestro interés (positivo o negativo o total)
+
+Por ejemplos ¿Qué dia de la semana es el mejor para el MERVAL?
+
+```{r especificar promedios}
+MERV1_d %>%
+  filter(anio == 2008) %>% 
+  group_by(dia_semana) %>% 
+  summarise(promedioDia=mean(tc_MERV1, na.rm = TRUE))
+```
+
+
+3. Tasa de variación en un periodo determinado
+Por ejemplo tasa de variación durante el 2008 a través de un grafica de caja. Aquí por ejemplo se observa el efecto de la crisis del 2008 en el MERVAL.
+
+```{r tasa variacion 2008}
+MERV1_d %>% 
+  mutate(nombre_mes = month(fecha, label = TRUE)) %>% 
+  filter (anio==2008) %>% 
+  ggplot(aes(x=nombre_mes, y=tc_MERV1))+
+  geom_boxplot(fill="blue")+
+  theme_minimal()
+```
+
+
+Veamos que sucedio en 2020 (Efecto COVID-19 en el MERVAL)
+
+
+```{r tasa variacion 2020}
+MERV1_d %>% 
+  mutate(nombre_mes = month(fecha, label = TRUE)) %>% 
+  filter (anio==2020) %>% 
+  ggplot(aes(x=nombre_mes, y=tc_MERV1))+
+  geom_boxplot(fill="blue")+
+  theme_minimal()
+```
+
+
+4. Distribución historica de las variables
+
+```{r distribucion historica}
+MERV1_d %>% 
+  group_by(anio) %>% 
+  ggplot(aes(x=anio, y = tc_MERV1))+
+  geom_boxplot(fill="white", colour="#3366FF",
+               outlier.color = "red")+
+  theme_minimal()
+```
+
+
+5. Histograma
+
+```{r histograma}
+ggplot(MERV1_d, aes(tc_MERV1))+
+  geom_histogram(col="black", fill="blue", alpha=.4)+
+  theme_minimal()+
+  geom_vline(xintercept=0, color="black", size=0.7)+
+  labs(title="Histograma de los rendimientos del MERVAL",
+       x="Retornos", y="Frecuencia")
+```
+
+
+6. Gráfico QQ
+
+```{r QQ}
+ggplot(MERV1_d, aes(sample=tc_MERV1))+
+  stat_qq(colour="red")+
+  stat_qq_line(colour="blue")+
+  theme_minimal()
+```
+
+
+## Datos atípicos del MERVAL
+
+Primero debemos reconocerlos para esto utilizamos la función mutate y un resumen estadistico
+
+
+```{r atipicos merval}
+MERV1_d %>%
+  mutate(z_r=abs(scale(tc_MERV1)),
+         mas_2_sd=factor((z_r>=3)*1, labels=c("No", "Atípico"))) %>% 
+  summarise(Obs=n(),
+            porc=n()/nrow(MERV1_d))
+```
+
+Gráficamente!!!
+
+```{r libreria gghi}
+library(gghighlight)
+```
+
+
+```{r grafica atipicos}
+MERV1_d %>% 
+  mutate(z_r=abs(scale(tc_MERV1)),
+         mas_2_sd=factor((z_r>=3)*1, labels=c("No", "Atípico"))) %>% 
+  ggplot(aes(x=fecha, y=tc_MERV1))+
+  geom_point()+
+  gghighlight(mas_2_sd=="Atípico")+
+  geom_hline(yintercept = c(3,-3), linetype="dashed", color="red")+
+  theme_minimal()+
+  labs(title="Distriución de datos atípicos del MERVAL",
+       caption="Elaboración propia, datos Yahoo finance",
+       y="Retornos del MERVAL",
+       X="Fecha")
+
+```
+
+
+
+
+
+Bueno, con esto podemos dar por finalizado este primer documento introductorio para Series de Tiempo en RStudio para el curso de series de tiempo de la Pontificia Universidad Católica Argentina. Espero que este material que he diseñado les ayude en su aprendizaje, les invito a leer sobre los temas trabajados. Cualquier consulta les invito a escribirme al siguiente correo electrónico: josehenaomonje@uca.edu.ar
+
+
+
+
+
+
